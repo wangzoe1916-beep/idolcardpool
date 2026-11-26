@@ -1,0 +1,2319 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>夢幻瑪卡龍・併團排卡與自動算帳系統</title>
+  <style>
+    :root {
+      --bg-pink: #fff5f9;
+      --bg-lavender: #f5f0ff;
+      --card-white: rgba(255, 255, 255, 0.92);
+      --pink-deep: #d81b60;
+      --purple-deep: #7b1fa2;
+      --blue-bind: #1565c0;
+      --red-vip: #d50000;
+      --purple-buyer: #6a1b9a;
+      --text-main: #3e2747;
+      --text-muted: #7c6685;
+      --border-soft: #f3d6e4;
+      --shadow-soft: 0 10px 28px rgba(186, 104, 200, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at 12% 10%, #ffe4ef 0%, transparent 38%),
+        radial-gradient(circle at 88% 15%, #e8dcff 0%, transparent 40%),
+        radial-gradient(circle at 50% 95%, #e1f5fe 0%, transparent 45%),
+        linear-gradient(160deg, var(--bg-pink), var(--bg-lavender));
+      min-height: 100vh;
+      padding-bottom: 90px;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(12px);
+      background: rgba(255, 250, 253, 0.88);
+      border-bottom: 1.5px solid var(--border-soft);
+      padding: 12px 16px;
+    }
+
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; }
+
+    .brand-badge {
+      background: linear-gradient(135deg, #ff9ec4, #c5a3ff);
+      color: #fff;
+      font-weight: 800;
+      padding: 8px 12px;
+      border-radius: 16px;
+      font-size: 15px;
+      box-shadow: 0 4px 12px rgba(216, 27, 96, 0.2);
+    }
+
+    .brand h1 { margin: 0; font-size: 17px; font-weight: 800; }
+    .brand small { display: block; font-size: 12px; color: var(--text-muted); }
+
+    .pool-tabs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+    .pool-tab {
+      border: 1.5px solid #e6c7f5;
+      background: #fff;
+      color: var(--purple-deep);
+      padding: 6px 13px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .pool-tab.active {
+      background: linear-gradient(135deg, #ff80ab, #b388ff);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(179, 136, 255, 0.35);
+    }
+
+    .nav-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .btn {
+      border: none;
+      border-radius: 14px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff7eb3, #a685ff);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(255, 126, 179, 0.3);
+    }
+
+    .btn-soft {
+      background: #fff;
+      color: var(--text-main);
+      border: 1.5px solid var(--border-soft);
+    }
+
+    .btn-danger {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #ffcdd2;
+    }
+
+    .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 10px; }
+
+    .container { max-width: 1180px; margin: 16px auto; padding: 0 14px; }
+
+    .top-banner {
+      background: var(--card-white);
+      border: 1.5px solid var(--border-soft);
+      border-radius: 22px;
+      padding: 14px 18px;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      align-items: center;
+    }
+
+    .stat-box {
+      background: linear-gradient(135deg, #fff8fb, #f8f3ff);
+      border-radius: 16px;
+      padding: 10px 14px;
+      border: 1px solid #f4dff0;
+    }
+
+    .stat-label { font-size: 12px; color: var(--text-muted); }
+    .stat-val { font-size: 18px; font-weight: 800; margin-top: 2px; }
+
+    .progress-wrap {
+      width: 100%;
+      height: 10px;
+      background: #fce4ec;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ff80ab, #b388ff, #80deea);
+      transition: width 0.3s ease;
+    }
+
+    .mode-switch { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+
+    .mode-btn {
+      padding: 9px 16px;
+      border-radius: 16px;
+      border: 1.5px solid #e7c9f6;
+      background: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .mode-btn.active {
+      background: linear-gradient(135deg, #ff80ab, #ce93d8);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .rules-card, .box-card {
+      background: var(--card-white);
+      border: 1.5px solid var(--border-soft);
+      border-radius: 22px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 16px;
+    }
+
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .rule-pill {
+      background: #fff9fc;
+      border: 1px dashed #f4a7c4;
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+
+    .contact-strip {
+      margin-top: 10px;
+      background: linear-gradient(135deg, #fff3f8, #f6efff);
+      border: 1.5px solid #e8c9f7;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .set-banner {
+      background: #fff;
+      border: 1.5px solid #ebd2f8;
+      border-radius: 20px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .set-banner img {
+      width: 100%;
+      max-height: 460px;
+      object-fit: contain;
+      border-radius: 14px;
+      background: #fff8fc;
+      margin-top: 8px;
+      border: 1px solid #f4e1ee;
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    .filter-chip {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1.5px solid #ebd2f8;
+      background: #fff;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--purple-deep);
+    }
+
+    .filter-chip.active { background: #9c27b0; color: #fff; border-color: #9c27b0; }
+
+    .search-input {
+      padding: 7px 12px;
+      border-radius: 12px;
+      border: 1.5px solid #e7c9f6;
+      background: #fff;
+      font-size: 13px;
+      min-width: 180px;
+    }
+
+    .buyer-bar {
+      background: var(--card-white);
+      border: 1.5px solid var(--border-soft);
+      border-radius: 20px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .buyer-identity { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+
+    .buyer-identity input, .buyer-identity select {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1.5px solid #dfb8f2;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      gap: 14px;
+    }
+
+    .idol-card {
+      position: relative;
+      background: #fff;
+      border-radius: 20px;
+      border: 2px solid #f6d8e8;
+      padding: 10px;
+      box-shadow: 0 6px 18px rgba(171, 130, 196, 0.12);
+      cursor: pointer;
+      transition: transform 0.16s, border-color 0.16s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .idol-card:hover { transform: translateY(-3px); }
+
+    .idol-card.selected {
+      border-color: #ff4081;
+      background: linear-gradient(180deg, #fff5f9, #f9f2ff);
+      box-shadow: 0 0 0 3px rgba(255, 64, 129, 0.18);
+    }
+
+    .idol-card.sold-out { opacity: 0.85; border-style: dashed; }
+
+    .star-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      z-index: 2;
+      background: linear-gradient(135deg, #ffd54f, #ff8a65);
+      color: #4a148c;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .qty-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 2;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1.5px solid #e1bee7;
+      color: #6a1b9a;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 999px;
+    }
+
+    .card-thumb {
+      width: 100%;
+      min-height: 118px;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #ffeef5, #efe8ff, #e3f7ff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 26px 8px 10px;
+      border: 1px solid #f4e1ee;
+    }
+
+    .card-code {
+      font-size: 11px;
+      font-weight: 800;
+      color: #9c27b0;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 2px 7px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+    }
+
+    .card-name { font-size: 12.5px; font-weight: 800; line-height: 1.3; }
+
+    .price-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+      gap: 4px;
+    }
+
+    .price-moon { font-size: 14px; font-weight: 900; color: var(--pink-deep); }
+
+    .bind-blue {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--blue-bind);
+      background: #e3f2fd;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    .queue-codes {
+      margin-top: 7px;
+      padding-top: 6px;
+      border-top: 1px dashed #f2d4e6;
+      min-height: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .code-tag {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 6px;
+      background: #faf5ff;
+      border: 1px solid #e1bee7;
+    }
+
+    .code-red { color: var(--red-vip); border-color: #ef9a9a; background: #ffebee; }
+    .code-purple { color: var(--purple-buyer); }
+
+    .cart-dock {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 45;
+      background: rgba(255, 252, 254, 0.96);
+      backdrop-filter: blur(12px);
+      border-top: 2px solid #f4b8d1;
+      box-shadow: 0 -8px 24px rgba(186, 104, 200, 0.18);
+      padding: 10px 16px;
+    }
+
+    .cart-dock-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .cart-summary { font-size: 13.5px; font-weight: 700; }
+    .cart-summary strong { color: var(--pink-deep); font-size: 16px; }
+
+    .admin-section {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px dashed #e6c7f5;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .contact-form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .contact-form-grid input, .contact-form-grid textarea {
+      width: 100%;
+      padding: 8px 11px;
+      border-radius: 10px;
+      border: 1.5px solid #dfb8f2;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .won-card-chip {
+      display: inline-block;
+      background: #fff4fa;
+      border: 1px solid #f4b8d1;
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9px;
+      margin: 2px 3px 2px 0;
+    }
+
+    .dm-layout { display: grid; grid-template-columns: 240px 1fr; gap: 12px; margin-top: 10px; }
+    @media (max-width: 720px) { .dm-layout { grid-template-columns: 1fr; } }
+
+    .dm-thread-list {
+      border: 1.5px solid #ebd2f8;
+      border-radius: 14px;
+      background: #fff9fc;
+      padding: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .dm-thread-btn {
+      text-align: left;
+      border: 1.5px solid #f0d7fa;
+      background: #fff;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .dm-thread-btn.active {
+      background: linear-gradient(135deg, #ff80ab, #b388ff);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .dm-box {
+      border: 1.5px solid #ebd2f8;
+      border-radius: 14px;
+      background: #fff;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dm-messages {
+      max-height: 240px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 6px;
+      background: #fff8fc;
+      border-radius: 12px;
+    }
+
+    .dm-msg {
+      max-width: 82%;
+      padding: 8px 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .dm-msg.buyer { align-self: flex-start; background: #f3e5f5; }
+    .dm-msg.admin { align-self: flex-end; background: linear-gradient(135deg, #ff7eb3, #a685ff); color: #fff; }
+    .dm-meta { font-size: 10.5px; opacity: 0.78; margin-top: 3px; }
+
+    .check-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fff8fc;
+      border: 1px solid #ebd2f8;
+      border-radius: 8px;
+      padding: 3px 7px;
+      margin-right: 4px;
+      margin-bottom: 3px;
+      cursor: pointer;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 9px 8px; border-bottom: 1px solid #f5e1ee; text-align: left; vertical-align: middle; }
+    th { background: #fff5fa; color: var(--purple-deep); font-weight: 800; }
+
+    .num-input {
+      width: 82px;
+      padding: 5px 6px;
+      border-radius: 8px;
+      border: 1.5px solid #dfb8f2;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .name-edit-input {
+      width: 195px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      border: 1.5px solid #dfb8f2;
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(52, 24, 68, 0.45);
+      backdrop-filter: blur(4px);
+      z-index: 60;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: #fff;
+      border-radius: 24px;
+      max-width: 640px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 20px;
+      border: 2px solid #f4b8d1;
+      box-shadow: 0 20px 50px rgba(106, 27, 154, 0.25);
+    }
+
+    .alert-box {
+      background: #fff8e1;
+      border: 1.5px solid #ffca28;
+      color: #6d4c00;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      margin: 10px 0;
+    }
+
+    .deposit-box {
+      background: #fce4ec;
+      border: 1.5px solid #f06292;
+      color: #880e4f;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      margin: 10px 0;
+    }
+
+    .tag-win { background: #e8f5e9; color: #2e7d32; padding: 2px 7px; border-radius: 8px; font-size: 11px; font-weight: 800; }
+    .tag-wait { background: #ede7f6; color: #5e35b1; padding: 2px 7px; border-radius: 8px; font-size: 11px; font-weight: 800; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-badge">🌷 併團排卡</div>
+      <div>
+        <h1 id="pageTitle">夢幻瑪卡龍・偶像卡併團系統</h1>
+        <small>預售排單｜紅字🔒 ＞ 金額高 ＞ 數量多 ＞ 先喊</small>
+      </div>
+    </div>
+    <div class="pool-tabs" id="poolTabs"></div>
+    <div class="nav-actions">
+      <button class="btn btn-soft btn-sm" onclick="openLookupModal()">🔎 輸電話查單</button>
+      <button class="btn btn-soft btn-sm" onclick="openRulesModal()">📜 喊單規則</button>
+      <button class="btn btn-primary btn-sm" onclick="openAdminLogin()">👑 老闆後台</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="top-banner" id="poolStatsBanner"></div>
+
+  <div class="mode-switch">
+    <button class="mode-btn active" id="tabBuyer" onclick="switchMode('buyer')">🛍️ 買家挑卡排單</button>
+    <button class="mode-btn" id="tabQueue" onclick="switchMode('queue')">📊 排單順位＆對帳總表</button>
+    <button class="mode-btn" id="tabAdmin" onclick="openAdminLogin()" style="display:none;">👑 本盤管理後台</button>
+  </div>
+
+  <section class="panel active" id="panel-buyer">
+    <div class="rules-card">
+      <div style="font-weight:800;font-size:14.5px;margin-bottom:8px;color:var(--pink-deep);">🌷 本盤重點規則提醒</div>
+      <div class="rules-grid">
+        <div class="rule-pill"><strong>🔒 順位判定：</strong>併主無條件 🔒（<b>紅字</b>）＞ 金額高 ＞ 數量多 ＞ 先喊。一般買家代號為<b>紫色</b>。</div>
+        <div class="rule-pill"><strong>🌙 價格＆💙 藍字綁物：</strong>喊 ⭐️ 熱貴卡或藍字卡，可選<b>自選綁物</b>或<b>盲包／抽抽樂</b>（① 簽卡/稀有包 $250/抽、② 一般/普通 $100/抽）。</div>
+        <div class="rule-pill"><strong>📦 整組優先＆訂金：</strong>整組/整彈收優先；總金額超過 <b>$2,000</b> 需付 <b>50% 賣貨便訂金</b>；整盤 80% 未售出則全盤失敗。</div>
+      </div>
+      <div class="contact-strip" id="buyerContactDisplay"></div>
+    </div>
+
+    <div class="buyer-bar">
+      <div class="buyer-identity">
+        <div>
+          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:3px;">已加入社群</label>
+          <select id="buyerPlatformSelect" onchange="syncBuyerAssignedCode()">
+            <option value="DC">DC</option>
+            <option value="LINE">LINE</option>
+            <option value="FB">FB</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:3px;">用戶名稱</label>
+          <input type="text" id="buyerHandleInput" placeholder="例如：小花 / @user123" oninput="syncBuyerAssignedCode()" />
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:3px;">名字／暱稱（免本名）</label>
+          <input type="text" id="buyerNameInput" placeholder="任何名字／暱稱皆可" />
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:3px;">電話（必填）</label>
+          <input type="tel" id="buyerPhoneInput" placeholder="例如：0912345678" oninput="syncBuyerAssignedCode()" />
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:3px;">喊單方式</label>
+          <select id="bundleModeSelect" onchange="updateCartDock()">
+            <option value="single">單張／拆單挑卡</option>
+            <option value="set">整組／整彈收（優先權高）</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+        <span id="assignedCodePreview" style="font-size:12.5px;font-weight:800;color:var(--purple-deep);">系統代號：填寫電話後自動生成</span>
+        <button class="btn btn-soft btn-sm" onclick="openLookupModal()">🔎 輸電話查單</button>
+        <button class="btn btn-soft btn-sm" onclick="openBuyerPrivateChat()">💬 專屬聊天室</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div id="setFilterChips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      <label class="filter-chip"><input type="checkbox" id="onlyStarFilter" onchange="renderCards()" /> 只看 ⭐️ 熱貴卡</label>
+      <label class="filter-chip"><input type="checkbox" id="onlyAvailableFilter" onchange="renderCards()" /> 只看尚有餘量</label>
+      <input type="text" class="search-input" id="searchCardInput" placeholder="🔍 搜尋卡號、名稱..." oninput="renderCards()" />
+    </div>
+
+    <div id="setBannerBox"></div>
+    <div class="card-grid" id="cardGrid"></div>
+  </section>
+
+  <section class="panel" id="panel-queue">
+    <div class="box-card">
+      <h3 style="margin-top:0;color:var(--purple-deep);">🏆 各卡即時排單順位（自動依紅字🔒＞金額＞數量＞先喊排序）</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>彈數/卡號</th>
+              <th>卡片名稱</th>
+              <th>價格 / 綁物</th>
+              <th>庫存</th>
+              <th>排單順位（第一順位得標）</th>
+            </tr>
+          </thead>
+          <tbody id="queueTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="box-card">
+      <h3 style="margin-top:0;color:var(--pink-deep);">🧾 買家喊單金額、50% 訂金＆對帳寄件狀態</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>代號</th>
+              <th>已加入 / 用戶名稱</th>
+              <th>名字 / 電話</th>
+              <th>排卡張數</th>
+              <th>卡片小計</th>
+              <th>綁物/盲包金額</th>
+              <th>總金額</th>
+              <th>訂金提醒（＞$2,000 收50%）</th>
+              <th>對帳／寄件狀態</th>
+            </tr>
+          </thead>
+          <tbody id="buyerSummaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-admin">
+    <div class="box-card">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;">
+        <div>
+          <h3 style="margin:0;color:var(--purple-deep);">👑 本盤管理後台（目前盤面：<span id="adminPoolName"></span>）</h3>
+          <small style="color:var(--text-muted);">全部卡片金額設定、開新盤直接複製、改卡名、調數量、傳整彈大圖</small>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="openNewPoolModal()">＋ 開設新盤（可複製現有盤）</button>
+          <button class="btn btn-soft btn-sm" onclick="openAddCardModal()">＋ 新增卡片</button>
+          <button class="btn btn-soft btn-sm" onclick="copyPoolSummary()">📋 一鍵複製全盤公告</button>
+          <button class="btn btn-danger btn-sm" onclick="resetCurrentPoolOrders()">🧹 清空本盤喊單</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCurrentPool()">🗑️ 刪除此盤</button>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <strong>💰 全部卡片金額／價格設定：</strong>
+        <select id="bulkTargetSet" style="padding:6px 10px;border-radius:10px;border:1.5px solid #dfb8f2;">
+          <option value="ALL">本盤全部卡片</option>
+          <option value="活動卡表">活動卡表</option>
+          <option value="第一彈">第一彈</option>
+          <option value="第二彈">第二彈</option>
+          <option value="第三彈">第三彈</option>
+          <option value="第四彈">第四彈</option>
+          <option value="第五彈">第五彈</option>
+          <option value="第六彈">第六彈</option>
+        </select>
+
+        <span>統一設成：</span>
+        <input type="number" id="bulkFixedPrice" class="num-input" min="0" step="10" placeholder="金額" />
+        <button class="btn btn-primary btn-sm" onclick="applyBulkFixedPrice()">套用統一金額</button>
+
+        <span>或加減：</span>
+        <input type="number" id="bulkDeltaPrice" class="num-input" value="0" placeholder="+/-元" />
+        <button class="btn btn-soft btn-sm" onclick="applyBulkPriceDelta()">套用加減價</button>
+      </div>
+
+      <div class="admin-section">
+        <strong>🖼️ 整彈大圖設定：</strong>
+        <select id="adminSetBannerSelect" style="padding:6px 10px;border-radius:10px;border:1.5px solid #dfb8f2;">
+          <option>活動卡表</option><option>第一彈</option><option>第二彈</option>
+          <option>第三彈</option><option>第四彈</option><option>第五彈</option><option selected>第六彈</option>
+        </select>
+        <label class="btn btn-primary btn-sm" style="cursor:pointer;">
+          上傳／更換該彈大圖
+          <input type="file" accept="image/*" style="display:none;" onchange="uploadSetBanner(this)" />
+        </label>
+        <button class="btn btn-soft btn-sm" onclick="clearSetBanner()">移除該彈大圖</button>
+      </div>
+
+      <div class="admin-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;width:100%;">
+          <strong>📩 老闆聯絡方式設定：</strong>
+          <button class="btn btn-primary btn-sm" onclick="saveContactInfo()">💾 儲存聯絡方式</button>
+        </div>
+        <div class="contact-form-grid">
+          <div><input type="text" id="contactLineInput" placeholder="LINE / ID" /></div>
+          <div><input type="text" id="contactSocialInput" placeholder="IG / Discord / 賣場連結" /></div>
+          <div><input type="text" id="contactOtherInput" placeholder="其他聯絡方式" /></div>
+          <div style="grid-column:1/-1;"><textarea id="contactNoteInput" rows="2" placeholder="對帳／匯款／取貨提醒文字"></textarea></div>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <strong>🔒 紅字名單：</strong>
+        <input type="text" id="redCodesInput" style="flex:1;min-width:200px;padding:6px 10px;border-radius:10px;border:1.5px solid #dfb8f2;" onchange="saveRedCodes()" />
+      </div>
+    </div>
+
+    <div class="box-card">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
+        <div>
+          <h3 style="margin:0;color:var(--pink-deep);">📦 每人最終得標卡片總覽（包貨＆結算用）</h3>
+          <small style="color:var(--text-muted);">自動依順位結算每位買家最終得標拿到哪些卡，未得標／候補卡會另外分開顯示</small>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="copyFinalWinnersSummary()">📋 一鍵複製最終得標分貨表</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>買家代號 / 名字</th>
+              <th>聯絡 / 電話</th>
+              <th>最終得標卡片（張數）</th>
+              <th>候補中卡片</th>
+              <th>得標小計＋綁物</th>
+            </tr>
+          </thead>
+          <tbody id="adminFinalWinnersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="box-card">
+      <h3 style="margin-top:0;color:var(--pink-deep);">📝 本盤卡片名稱、價格＆數量調整</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>彈數/卡號</th>
+              <th>卡片名稱</th>
+              <th>單價 (🌙)</th>
+              <th>綁物 (💙)</th>
+              <th>熱卡 ⭐️</th>
+              <th>數量</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="adminCardTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="box-card">
+      <h3 style="margin-top:0;color:var(--purple-deep);">📌 全部喊單紀錄管理</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>代號</th>
+              <th>社群/用戶</th>
+              <th>名字/電話</th>
+              <th>卡片</th>
+              <th>模式</th>
+              <th>綁物</th>
+              <th>時間</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="adminOrdersTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="box-card">
+      <h3 style="margin-top:0;color:var(--pink-deep);">💬 買家一對一專屬聊天室</h3>
+      <div class="dm-layout">
+        <div class="dm-thread-list" id="adminDmThreadList"></div>
+        <div class="dm-box">
+          <div id="adminDmHeader" style="font-weight:800;font-size:13.5px;color:var(--purple-deep);">請從左側選擇一位買家</div>
+          <div class="dm-messages" id="adminDmMessages"></div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="adminDmInput" style="flex:1;padding:8px 12px;border-radius:12px;border:1.5px solid #dfb8f2;" placeholder="輸入回覆..." onkeydown="if(event.key==='Enter')sendAdminDm()" />
+            <button class="btn btn-primary btn-sm" onclick="sendAdminDm()">傳送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="cart-dock">
+  <div class="cart-dock-inner">
+    <div class="cart-summary" id="cartSummaryText">尚未勾選卡片｜名字隨意填、電話必填</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-soft btn-sm" onclick="openLookupModal()">🔎 查單</button>
+      <button class="btn btn-soft btn-sm" onclick="openBuyerPrivateChat()">💬 聊天室</button>
+      <button class="btn btn-soft btn-sm" onclick="clearSelection()">清除勾選</button>
+      <button class="btn btn-primary" onclick="openCheckoutModal()">✨ 確認綁物＆送出喊單</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="lookupModal">
+  <div class="modal" style="max-width:540px;">
+    <h3 style="margin-top:0;color:var(--purple-deep);">🔎 輸入電話查詢我的排單</h3>
+    <div style="display:flex;gap:8px;">
+      <input type="tel" id="lookupPhoneInput" style="flex:1;padding:9px 12px;border-radius:12px;border:1.5px solid #dfb8f2;" placeholder="輸入電話（例如：0912345678）" onkeydown="if(event.key==='Enter')runPhoneLookup()" />
+      <button class="btn btn-primary btn-sm" onclick="runPhoneLookup()">查詢</button>
+    </div>
+    <div id="lookupResultBox" style="margin-top:12px;font-size:13px;line-height:1.65;"></div>
+    <div style="text-align:right;margin-top:14px;"><button class="btn btn-soft btn-sm" onclick="closeModal('lookupModal')">關閉</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="checkoutModal">
+  <div class="modal">
+    <h3 style="margin-top:0;color:var(--pink-deep);">🌷 確認喊單、綁物方式與訂金計算</h3>
+    <div id="checkoutDetail"></div>
+    <div style="margin-top:12px;">
+      <label style="font-weight:800;font-size:13px;display:block;margin-bottom:6px;">選擇綁物／盲包抽抽樂方式：</label>
+      <select id="bindChoiceType" style="width:100%;padding:9px 12px;border-radius:12px;border:1.5px solid #dfb8f2;" onchange="refreshCheckoutModal()">
+        <option value="none">無需綁物</option>
+        <option value="self">自選綁物</option>
+        <option value="gacha250">盲包／抽抽樂 ① 簽卡、稀有包（$250 / 1抽）</option>
+        <option value="gacha100">盲包／抽抽樂 ② 一般、普通（$100 / 1抽）</option>
+      </select>
+    </div>
+    <div id="gachaCountRow" style="display:none;margin-top:10px;">
+      <label style="font-weight:800;font-size:13px;">抽數／包數：</label>
+      <input type="number" id="gachaCountInput" class="num-input" style="width:90px;" min="1" value="1" onchange="refreshCheckoutModal()" />
+    </div>
+    <div style="margin-top:10px;">
+      <input type="text" id="orderNoteInput" style="width:100%;padding:8px 12px;border-radius:12px;border:1.5px solid #dfb8f2;" placeholder="備註（可留空）" />
+    </div>
+    <div id="checkoutAlerts"></div>
+    <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+      <button class="btn btn-soft" onclick="closeModal('checkoutModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitBuyerOrder()">✅ 送出排單並生成文字</button>
+    </div>
+    <div id="generatedOrderOutput" style="display:none;margin-top:14px;">
+      <textarea id="orderCopyText" rows="9" style="width:100%;padding:10px;border-radius:12px;border:1.5px solid #ce93d8;font-size:12.5px;"></textarea>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+        <button class="btn btn-soft btn-sm" onclick="copyOrderText()">📋 一鍵複製明細</button>
+        <button class="btn btn-primary btn-sm" onclick="closeModal('checkoutModal')">✅ 完成並關閉視窗</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="buyerChatModal">
+  <div class="modal" style="max-width:500px;">
+    <h3 id="buyerChatTitle" style="margin-top:0;color:var(--purple-deep);">💬 個人專屬聊天室</h3>
+    <div class="dm-messages" id="buyerChatMessages"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <input type="text" id="buyerChatInput" style="flex:1;padding:8px 12px;border-radius:12px;border:1.5px solid #dfb8f2;" placeholder="輸入想私訊老闆的內容..." onkeydown="if(event.key==='Enter')sendBuyerDm()" />
+      <button class="btn btn-primary btn-sm" onclick="sendBuyerDm()">傳送</button>
+    </div>
+    <div style="text-align:right;margin-top:12px;"><button class="btn btn-soft btn-sm" onclick="closeModal('buyerChatModal')">關閉</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="rulesModal">
+  <div class="modal">
+    <h3 style="margin-top:0;color:var(--pink-deep);">🌷 喊單規定 規則</h3>
+    <div id="modalContactBlock" class="contact-strip" style="margin-top:0;margin-bottom:12px;"></div>
+    <div style="font-size:13px;line-height:1.75;white-space:pre-line;">此盤是預售
+採 併主無條件🔒（紅字）＞ 金額高 ＞ 數量多 ＞ 先喊
+只有併主 / 副併主 及指定人員是紅字，其他人的代號顏色為紫色！
+· 圖上皆有價格🌙 （）內藍字是綁物金額
+· 可選擇自選綁物或抽抽樂/盲包
+· 熱貴卡左上角都會有一個⭐️，只要有喊到星星的都要選擇抽盲包或抽抽樂，或者是多帶
+· 不看卡況 皆默認廠損 有嚴重損會告知
+· 併團時間為一個禮拜，統計結束後沒有人要的卡做盲包 and 抽抽樂💕
+· 盲包 / 抽抽樂：① 簽卡、稀有包 250/1抽 ② 一般、普通 100/1抽
+· 若整盤80%未售出 則全部交易視為失敗
+· 整組整彈出優先
+· 金額過大（超過 $2,000）需付訂金50%，由賣貨便的方式付訂金</div>
+    <div style="text-align:right;margin-top:14px;"><button class="btn btn-primary" onclick="closeModal('rulesModal')">我知道了</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="adminLoginModal">
+  <div class="modal" style="max-width:400px;">
+    <h3 style="margin-top:0;color:var(--purple-deep);">👑 老闆後台驗證</h3>
+    <input type="password" id="adminPwdInput" style="width:100%;padding:10px 12px;border-radius:12px;border:1.5px solid #ce93d8;font-size:14px;" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')verifyAdminPwd()" />
+    <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-soft" onclick="closeModal('adminLoginModal')">取消</button>
+      <button class="btn btn-primary" onclick="verifyAdminPwd()">進入後台</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="formModal">
+  <div class="modal" style="max-width:460px;" id="formModalContent"></div>
+</div>
+
+<script>
+const STORAGE_KEY = "IDOL_CARD_GROUP_ORDER_V15_CLOUD_2026";
+const ADMIN_PASS = "1916";
+const CLOUD_URL = "https://script.google.com/macros/s/AKfycbwEb8tOC5S5KjVuPi3H6LGVXcUggS60H-bd2QYPMlHoc2PRBeCpAhPplh_xlm277i1tbQ/exec";
+
+function buildInitialCards() {
+  const list = [];
+  const add = (setName, code, name, price, bind = 0, star = false, group = "", qty = 1) => {
+    list.push({
+      id: `${setName}-${code}-${Math.random().toString(36).slice(2,6)}`,
+      setName, code, name, price, bind, star, group, qty
+    });
+  };
+  [
+    ["ACT-01","人氣螢光幻彩試煉 Scarlet Butterfly人氣螢光幻彩",150],
+    ["ACT-02","上市100天慶祝活動 俏皮可愛兔寶寶紅",180],
+    ["ACT-03","上市紀念！免費機台體驗會 偶像公主空間Poppin' Heart",120],
+    ["ACT-04","先行免費機台體驗會 偶像公主空間Miracle Moon",150],
+    ["ACT-05","先行免費機台體驗會 Poppin' Heart人氣螢光幻彩",250],
+    ["ACT-06","店鋪賽參賽獎 2026/3月 華麗大賽香檳銀",1000,200,true],
+    ["ACT-07","店鋪賽參賽獎 2026/5月 夢人魚大賽紫",1000,200,true],
+    ["ACT-08","店鋪賽參賽獎 2026/7月 羽衣大賽甜心粉紅",1000,200,true],
+    ["ACT-09","店鋪賽參賽獎 2026/9月 螢光白晝大賽桃晶",900,150,true],
+    ["ACT-10","店鋪賽報名獎 2026/3月 花朵與紗裙焦糖米",120],
+    ["ACT-11","店鋪賽報名獎 2026/5月 銀河粉紅",130],
+    ["ACT-12","店鋪賽報名獎 2026/7月 可愛蝴蝶活力橘",150],
+    ["ACT-13","店鋪賽報名獎 2026/9月 魔女企鵝白",100],
+    ["ACT-14","牽月跟生解！偶像公主幸運抽獎 華麗夢幻仙境粉紅",2000,400,true],
+    ["ACT-15","祕密的偶像公主動畫 時尚魔女登場紀念活動！小妖精紫",150],
+    ["ACT-16","偶像公主大集合！入場特典 Q彈果凍泡泡粉紅",750,150,true],
+    ["ACT-17","偶像公主大集合！消費獎勵 Flower March人氣螢光幻彩",250],
+    ["ACT-18","偶像公主大集合！遊玩獎勵 閃亮點點夕陽橘",120],
+    ["ACT-19","第六彈發卡活動 2026/10/24 歡樂麻糬",250],
+    ["ACT-20","第六彈發卡活動 2026/11/07 皇冠白晝公主白",250],
+    ["ACT-21","暑假限定！偶像公主幸運抽獎 華麗寶石藍",1800,350,true],
+    ["ACT-22","暑假發卡活動 偶像公主空間Miracle Moon灰",100],
+    ["ACT-23","隨餐手環/卡冊附卡 粉色寶石",120],
+    ["ACT-24","隨餐跟生解！偶像公主幸運抽獎 涼新檸檬薄荷",150],
+    ["ACT-25","新生迎新摸彩卡活動 可愛蝴蝶參參可可",250]
+  ].forEach(x => add("活動卡表", ...x));
+
+  [
+    ["AP1-001","Poppin' Heart 人氣螢光幻彩",350],
+    ["AP1-001P","Poppin' Heart 人氣螢光幻彩(P)",350],
+    ["AP1-002","Miracle Moon 人氣螢光幻彩",400],
+    ["AP1-002P","Miracle Moon 人氣螢光幻彩(P)",400],
+    ["AP1-003","Scarlet Butterfly 人氣螢光幻彩",350],
+    ["AP1-003P","Scarlet Butterfly 人氣螢光幻彩(P)",350],
+    ["AP1-004","俏皮可愛兔寶寶",600,100,true],
+    ["AP1-004P","俏皮可愛兔寶寶(P)",600,100,true],
+    ["AP1-005","俏皮可愛兔寶寶藍",200],
+    ["AP1-006","甜甜蜜桃點點",200],
+    ["AP1-007","甜甜蜜桃點點",200],
+    ["AP1-008","Q彈果凍蘇打",200],
+    ["AP1-009","Q彈果凍蘇打",200],
+    ["AP1-010","雲朵葡萄果凍",200],
+    ["AP1-011","雲朵葡萄果凍",200],
+    ["AP1-012","甜蜜櫻桃",200],
+    ["AP1-013","甜蜜櫻桃藍",200],
+    ["AP1-014","閃耀水母藍",450],
+    ["AP1-015","閃耀水母粉紅",450],
+    ["AP1-016","蝴蝶魔術師",200],
+    ["AP1-017","蝴蝶魔術師紅",200],
+    ["AP1-018","生日快樂！曜紫",300],
+    ["AP1-018P","生日快樂！曜紫(P)",450],
+    ["AP1-019","生日快樂！葵月",300]
+  ].forEach(x => add("第一彈", ...x));
+
+  [
+    ["AP2-001","Flower March 人氣螢光幻彩",450],
+    ["AP2-001P","Flower March 人氣螢光幻彩(P)",450],
+    ["AP2-002","Rosession 人氣螢光幻彩",450],
+    ["AP2-002P","Rosession 人氣螢光幻彩(P)",450],
+    ["AP2-003","Poppin' Heart 人氣螢光幻彩",50],
+    ["AP2-004","Scarlet Butterfly 人氣螢光幻彩",100],
+    ["AP2-005","糖果大賽",450],
+    ["AP2-005P","糖果大賽(P)",500],
+    ["AP2-006","糖果大賽",900,150,true],
+    ["AP2-007","清新檸檬粉紅",1100,200,true],
+    ["AP2-008","清新檸檬藍",200],
+    ["AP2-009","貓咪魔術師",550,100,false],
+    ["AP2-009P","貓咪魔術師(P)",550,100,false],
+    ["AP2-010","貓咪魔術師",200],
+    ["AP2-011","花朵與蕾絲",600,100,true],
+    ["AP2-012","花朵與蕾絲",200],
+    ["AP2-013","優雅寶石藍",550,100,false],
+    ["AP2-014","優雅寶石紅",200],
+    ["AP2-015","小妖精",300],
+    ["AP2-016","小妖精",300],
+    ["AP2-017","西洋棋",600,100,true],
+    ["AP2-018","西洋棋",200],
+    ["AP2-019","浪漫吊帶",250],
+    ["AP2-020","浪漫吊帶",250]
+  ].forEach(x => add("第二彈", ...x));
+
+  [
+    ["AP3-001","Secret Friends 人氣螢光幻彩粉紅",330],
+    ["AP3-001P","Secret Friends 人氣螢光幻彩粉紅(P)",330],
+    ["AP3-002","Secret Friends 人氣螢光幻彩藍",330],
+    ["AP3-002P","Secret Friends 人氣螢光幻彩藍(P)",330],
+    ["AP3-003","Secret Friends 人氣螢光幻彩黃",330],
+    ["AP3-003P","Secret Friends 人氣螢光幻彩黃(P)",330],
+    ["AP3-004","Rainbow Candy 人氣螢光幻彩",200],
+    ["AP3-005","Bear Bear Bear 人氣螢光幻彩",200],
+    ["AP3-006","美人魚大賽粉紅",300],
+    ["AP3-007","美人魚大賽藍",300],
+    ["AP3-008","美人魚大賽黃",300],
+    ["AP3-009","可愛糖果",300],
+    ["AP3-010","可愛糖果",300],
+    ["AP3-011","華麗金魚",250],
+    ["AP3-012","華麗金魚",250],
+    ["AP3-013","繽紛糖果",250],
+    ["AP3-014","繽紛糖果",250],
+    ["AP3-015","晚安綿羊",380],
+    ["AP3-016","晚安綿羊",380],
+    ["AP3-017","閃耀水母藍",250],
+    ["AP3-018","生日快樂！紡",500],
+    ["AP3-018P","生日快樂！紡(P)",500],
+    ["AP3-019","生日快樂！琉璃",500]
+  ].forEach(x => add("第三彈", ...x));
+
+  [
+    ["AP4-001","Quartet STAR 人氣螢光幻彩紅心",330],
+    ["AP4-001P","Quartet STAR 人氣螢光幻彩紅心(P)",330],
+    ["AP4-002","Quartet STAR 人氣螢光幻彩黑桃",400],
+    ["AP4-002P","Quartet STAR 人氣螢光幻彩黑桃(P)",400],
+    ["AP4-003","Quartet STAR 人氣螢光幻彩方塊",300],
+    ["AP4-003P","Quartet STAR 人氣螢光幻彩方塊(P)",300],
+    ["AP4-004","Quartet STAR 人氣螢光幻彩梅花",350],
+    ["AP4-004P","Quartet STAR 人氣螢光幻彩梅花(P)",350],
+    ["AP4-005","Love My Music 人氣螢光幻彩",300],
+    ["AP4-005P","Love My Music 人氣螢光幻彩(P)",300],
+    ["AP4-006","羽毛大賽炫紅",550,100,false],
+    ["AP4-007","羽毛大賽炫藍",200],
+    ["AP4-008","羽毛大賽可愛綠",200],
+    ["AP4-009","羽毛大賽可愛橘",200],
+    ["AP4-010","奇蹟萬聖節粉紅",250],
+    ["AP4-011","奇蹟萬聖節藍",250],
+    ["AP4-012","奇蹟萬聖節黃",250],
+    ["AP4-013","幽靈萬聖節",300],
+    ["AP4-014","幽靈萬聖節",300],
+    ["AP4-015","小惡魔搖滾",120],
+    ["AP4-016","童話灰姑娘",200],
+    ["AP4-017","童話白雪公主",150],
+    ["AP4-018","童話小紅帽",200],
+    ["AP4-019","生日快樂！櫻",300],
+    ["AP4-019P","生日快樂！櫻(P)",300]
+  ].forEach(x => add("第四彈", ...x));
+
+  [
+    ["AP5-001","Flower March 公主大人螢光幻彩",850,150,true],
+    ["AP5-001P","Flower March 公主大人螢光幻彩(P)",850,150,true],
+    ["AP5-002","Flower March 公主大人螢光幻彩",300],
+    ["AP5-003","Flower March 人氣螢光幻彩純白",300],
+    ["AP5-004","螢光白晝大賽",300],
+    ["AP5-004P","螢光白晝大賽(P)",300],
+    ["AP5-005","蕾絲",400],
+    ["AP5-006","蕾絲黑",200],
+    ["AP5-007","特殊耶誕節紅",650,100,true],
+    ["AP5-008","特殊耶誕節紅",650,100,true],
+    ["AP5-009","特殊耶誕節藍",250],
+    ["AP5-010","特殊耶誕節綠",250],
+    ["AP5-011","特殊耶誕節橘",250],
+    ["AP5-012","特殊耶誕節白",350],
+    ["AP5-012P","特殊耶誕節白(P)",350],
+    ["AP5-013","蹦蹦跳跳兔寶寶",400],
+    ["AP5-013P","蹦蹦跳跳兔寶寶(P)",400],
+    ["AP5-014","童話夢境仙境",250],
+    ["AP5-015","春節粉紅",200],
+    ["AP5-016","春節藍",200],
+    ["AP5-017","春節黃",200],
+    ["AP5-018","童話小飛俠",180],
+    ["AP5-019","花朵圓舞曲舞台",300]
+  ].forEach(x => add("第五彈", ...x));
+
+  [
+    ["AP6-001","閃亮Quartet STAR 人氣螢光幻彩紅",700,150,true],
+    ["AP6-002","閃亮Quartet STAR 人氣螢光幻彩藍",300],
+    ["AP6-002P","閃亮Quartet STAR 人氣螢光幻彩藍(P)",300],
+    ["AP6-003","閃亮Quartet STAR 人氣螢光幻彩綠",650,100,true],
+    ["AP6-003P","閃亮Quartet STAR 人氣螢光幻彩綠(P)",650,100,true],
+    ["AP6-004","閃亮Quartet STAR 人氣螢光幻彩橘",300],
+    ["AP6-005","華麗壓軸旋轉",250],
+    ["AP6-006","華麗壓軸旋轉",250],
+    ["AP6-007","Secret Friends 人氣螢光幻彩純白",250],
+    ["AP6-008","Secret Friends 人氣螢光幻彩純白",250],
+    ["AP6-009","Secret Friends 人氣螢光幻彩純白",250],
+    ["AP6-010","少女莫莫琴",250],
+    ["AP6-011","少女莫莫琴",250],
+    ["AP6-012","戀人節慶典紅",680,120,true],
+    ["AP6-013","戀人節慶典藍",680,120,true],
+    ["AP6-014","戀人節慶典黃",250],
+    ["AP6-014P","戀人節慶典黃(P)",250],
+    ["AP6-015","浪漫雪寶",400],
+    ["AP6-016","浪漫雪寶",200],
+    ["AP6-017","海洋精靈",500],
+    ["AP6-018","海洋精靈",200],
+    ["AP6-019","繽紛糖果伏輪",200],
+    ["AP6-020","晚安睡衣夜",200],
+    ["AP6-053","公主偶像公主大人螢光幻彩",300],
+    ["AP6-053P","公主偶像公主大人螢光幻彩(P)",300],
+    ["AP6-054","公主偶像公主大人螢光幻彩",350],
+    ["AP6-054P","公主偶像公主大人螢光幻彩(P)",350],
+    ["AP6-055","公主偶像公主大人螢光幻彩",250]
+  ].forEach(x => add("第六彈", ...x));
+
+  return list;
+}
+
+function cloneCardsFromPool(sourcePool) {
+  if (!sourcePool || !Array.isArray(sourcePool.cards)) return [];
+  return sourcePool.cards.map(c => ({
+    id: `${c.setName}-${c.code}-${Math.random().toString(36).slice(2,6)}`,
+    setName: c.setName,
+    code: c.code,
+    name: c.name,
+    price: Number(c.price || 0),
+    bind: Number(c.bind || 0),
+    star: Boolean(c.star),
+    group: c.group || "",
+    qty: Math.max(1, Number(c.qty || 1))
+  }));
+}
+
+function defaultState() {
+  return {
+    activePoolId: "pool-2",
+    redCodes: ["併主", "副併主", "VIP"],
+    contactInfo: { line: "", social: "", other: "", note: "" },
+    buyerRegistry: {},
+    nextBuyerSeq: 1,
+    privateChats: {},
+    buyerStatuses: {},
+    setBanners: {},
+    pools: {
+      "pool-1": { id: "pool-1", name: "第一盤（已清空）", status: "已結單", cards: [], orders: [] },
+      "pool-2": { id: "pool-2", name: "第二盤（預售進行中）", status: "進行中", cards: buildInitialCards(), orders: [] }
+    }
+  };
+}
+
+let state = loadState();
+let currentSetFilter = "ALL";
+let selectedCardIds = new Set();
+let isAdminLoggedIn = false;
+let activeAdminChatKey = "";
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    return {
+      ...defaultState(),
+      ...parsed,
+      contactInfo: { ...defaultState().contactInfo, ...(parsed.contactInfo || {}) },
+      setBanners: parsed.setBanners || {}
+    };
+  } catch (e) {
+    return defaultState();
+  }
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  pushToCloud();
+}
+
+async function pullFromCloud() {
+  if (!CLOUD_URL) return;
+  try {
+    const res = await fetch(CLOUD_URL);
+    const text = await res.text();
+    if (!text) return;
+    const cloudState = JSON.parse(text);
+    if (cloudState && cloudState.pools) {
+      state = {
+        ...defaultState(),
+        ...cloudState,
+        contactInfo: { ...defaultState().contactInfo, ...(cloudState.contactInfo || {}) },
+        setBanners: cloudState.setBanners || {}
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+    }
+  } catch (err) {
+    console.warn("雲端讀取失敗：", err);
+  }
+}
+
+async function pushToCloud() {
+  if (!CLOUD_URL) return;
+  try {
+    await fetch(CLOUD_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify(state)
+    });
+  } catch (err) {
+    console.warn("雲端寫入失敗：", err);
+  }
+}
+
+function getPool() {
+  return state.pools[state.activePoolId] || Object.values(state.pools)[0];
+}
+
+function normalizePhone(phone) {
+  return String(phone || "").replace(/[^\d]/g, "");
+}
+
+function buyerUserKey(phone, platform = "DC", handle = "") {
+  const cleanPhone = normalizePhone(phone);
+  if (cleanPhone) return `PHONE::${cleanPhone}`;
+  return `SOCIAL::${(platform || "").trim().toUpperCase()}::${(handle || "").trim().toLowerCase()}`;
+}
+
+function getOrAssignBuyerCode(phone, platform = "DC", handle = "", name = "", createIfMissing = false) {
+  const cleanPhone = normalizePhone(phone);
+  const p = (platform || "DC").trim();
+  const h = (handle || "").trim();
+  const n = (name || "").trim();
+  if (!cleanPhone && !h) return "";
+  const key = buyerUserKey(cleanPhone, p, h);
+  if (state.buyerRegistry[key]) {
+    if (n) state.buyerRegistry[key].name = n;
+    if (p) state.buyerRegistry[key].platform = p;
+    if (h) state.buyerRegistry[key].handle = h;
+    return state.buyerRegistry[key].code;
+  }
+  if (!createIfMissing) return "";
+  const code = `B${String(state.nextBuyerSeq || 1).padStart(2, "0")}`;
+  state.nextBuyerSeq = Number(state.nextBuyerSeq || 1) + 1;
+  state.buyerRegistry[key] = { code, phone: cleanPhone || phone, platform: p, handle: h, name: n };
+  if (!state.privateChats[key]) state.privateChats[key] = [];
+  saveState();
+  return code;
+}
+
+function syncBuyerAssignedCode() {
+  const platform = (document.getElementById("buyerPlatformSelect")?.value || "DC").trim();
+  const handle = (document.getElementById("buyerHandleInput")?.value || "").trim();
+  const name = (document.getElementById("buyerNameInput")?.value || "").trim();
+  const phone = (document.getElementById("buyerPhoneInput")?.value || "").trim();
+  const el = document.getElementById("assignedCodePreview");
+  if (!el) return;
+  if (!normalizePhone(phone) && !handle) {
+    el.textContent = "系統代號：填寫電話後自動生成";
+    return;
+  }
+  const code = getOrAssignBuyerCode(phone, platform, handle, name, true);
+  el.innerHTML = `系統自動分配代號：${renderCodeBadge(code)}`;
+}
+
+function isRedCode(code) {
+  const clean = (code || "").trim().toLowerCase();
+  return clean ? state.redCodes.some(rc => rc.trim().toLowerCase() === clean) : false;
+}
+
+function renderCodeBadge(code) {
+  const red = isRedCode(code);
+  return `<span class="code-tag ${red ? "code-red" : "code-purple"}">${red ? "🔒" : "💜"}${escapeHtml(code)}</span>`;
+}
+
+function escapeHtml(str) {
+  return String(str || "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+}
+
+function compressImage(file, maxW = 1000, quality = 0.72, cb) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      cb(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function uploadSetBanner(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const setName = document.getElementById("adminSetBannerSelect").value;
+  compressImage(file, 1000, 0.72, dataUrl => {
+    state.setBanners[setName] = dataUrl;
+    saveState();
+    renderSetBanner();
+    alert(`已更新「${setName}」整彈大圖！`);
+  });
+}
+
+function clearSetBanner() {
+  const setName = document.getElementById("adminSetBannerSelect").value;
+  delete state.setBanners[setName];
+  saveState();
+  renderSetBanner();
+}
+
+function renderSetBanner() {
+  const box = document.getElementById("setBannerBox");
+  if (!box) return;
+  const img = currentSetFilter !== "ALL" ? state.setBanners[currentSetFilter] : "";
+  if (!img) { box.innerHTML = ""; return; }
+  box.innerHTML = `
+    <div class="set-banner">
+      <strong>🖼️ ${escapeHtml(currentSetFilter)} 整彈大圖（下方直接點卡名排單）</strong>
+      <img src="${img}" alt="${escapeHtml(currentSetFilter)} 整彈大圖" />
+    </div>
+  `;
+}
+
+function formatContactHtml() {
+  const ci = state.contactInfo || {};
+  const parts = [];
+  if (ci.line) parts.push(`<strong>LINE：</strong>${escapeHtml(ci.line)}`);
+  if (ci.social) parts.push(`<strong>社群／賣場：</strong>${escapeHtml(ci.social)}`);
+  if (ci.other) parts.push(`<strong>其他聯絡：</strong>${escapeHtml(ci.other)}`);
+  const head = parts.length ? `<strong>📩 老闆聯絡方式：</strong>${parts.join(" ｜ ")}` : `<strong>📩 老闆聯絡方式：</strong>尚未設定`;
+  const note = ci.note ? `<div style="margin-top:4px;color:var(--purple-deep);">💬 ${escapeHtml(ci.note)}</div>` : "";
+  return head + note;
+}
+
+function formatContactPlainText() {
+  const ci = state.contactInfo || {};
+  const lines = [];
+  if (ci.line) lines.push(`LINE：${ci.line}`);
+  if (ci.social) lines.push(`社群/賣場：${ci.social}`);
+  if (ci.other) lines.push(`其他聯絡：${ci.other}`);
+  if (ci.note) lines.push(`提醒：${ci.note}`);
+  return lines.length ? `\n📩 老闆聯絡方式：\n${lines.join("\n")}` : "";
+}
+
+function saveContactInfo() {
+  state.contactInfo = {
+    line: (document.getElementById("contactLineInput")?.value || "").trim(),
+    social: (document.getElementById("contactSocialInput")?.value || "").trim(),
+    other: (document.getElementById("contactOtherInput")?.value || "").trim(),
+    note: (document.getElementById("contactNoteInput")?.value || "").trim()
+  };
+  saveState();
+  renderContactDisplays();
+  alert("已儲存聯絡方式！");
+}
+
+function renderContactDisplays() {
+  const ci = state.contactInfo || {};
+  if (document.getElementById("contactLineInput")) document.getElementById("contactLineInput").value = ci.line || "";
+  if (document.getElementById("contactSocialInput")) document.getElementById("contactSocialInput").value = ci.social || "";
+  if (document.getElementById("contactOtherInput")) document.getElementById("contactOtherInput").value = ci.other || "";
+  if (document.getElementById("contactNoteInput")) document.getElementById("contactNoteInput").value = ci.note || "";
+  const html = formatContactHtml();
+  if (document.getElementById("buyerContactDisplay")) document.getElementById("buyerContactDisplay").innerHTML = html;
+  if (document.getElementById("modalContactBlock")) document.getElementById("modalContactBlock").innerHTML = html;
+}
+
+function orderBuyerKey(o) {
+  return buyerUserKey(o.phone, o.platform, o.handle);
+}
+
+function getBuyerStatus(poolId, bKey) {
+  return state.buyerStatuses[`${poolId}::${bKey}`] || { paid: false, shipped: false };
+}
+
+function toggleBuyerStatus(poolId, bKey, field, checked) {
+  const k = `${poolId}::${bKey}`;
+  if (!state.buyerStatuses[k]) state.buyerStatuses[k] = { paid: false, shipped: false };
+  state.buyerStatuses[k][field] = Boolean(checked);
+  saveState();
+  renderQueueAndSummary(getPool());
+}
+
+function getRankedOrdersForCard(pool, cardId) {
+  const cardOrders = pool.orders.filter(o => o.cardId === cardId);
+  const buyerTotals = {};
+  pool.orders.forEach(o => {
+    const c = pool.cards.find(x => x.id === o.cardId);
+    const bKey = orderBuyerKey(o) || o.code;
+    if (!buyerTotals[bKey]) buyerTotals[bKey] = { amount: 0, count: 0 };
+    buyerTotals[bKey].amount += c ? Number(c.price || 0) : 0;
+    buyerTotals[bKey].count += 1;
+  });
+
+  return cardOrders.sort((a, b) => {
+    const aRed = isRedCode(a.code) ? 1 : 0;
+    const bRed = isRedCode(b.code) ? 1 : 0;
+    if (aRed !== bRed) return bRed - aRed;
+    const aSet = a.mode === "set" ? 1 : 0;
+    const bSet = b.mode === "set" ? 1 : 0;
+    if (aSet !== bSet) return bSet - aSet;
+    const aKey = orderBuyerKey(a) || a.code;
+    const bKey = orderBuyerKey(b) || b.code;
+    const aAmt = (buyerTotals[aKey] && buyerTotals[aKey].amount) || 0;
+    const bAmt = (buyerTotals[bKey] && buyerTotals[bKey].amount) || 0;
+    if (aAmt !== bAmt) return bAmt - aAmt;
+    const aCnt = (buyerTotals[aKey] && buyerTotals[aKey].count) || 0;
+    const bCnt = (buyerTotals[bKey] && buyerTotals[bKey].count) || 0;
+    if (aCnt !== bCnt) return bCnt - aCnt;
+    return a.timestamp - b.timestamp;
+  });
+}
+
+function buildFinalWinnersMap(pool) {
+  const map = {};
+  const ensureBuyer = (bKey, sampleOrder) => {
+    if (!map[bKey]) {
+      map[bKey] = {
+        bKey,
+        code: sampleOrder.code,
+        name: sampleOrder.name || "",
+        phone: sampleOrder.phone || "-",
+        platform: sampleOrder.platform || "",
+        handle: sampleOrder.handle || "",
+        wonCards: [],
+        waitCards: [],
+        wonAmount: 0,
+        bindSum: 0
+      };
+    }
+    if (sampleOrder.name) map[bKey].name = sampleOrder.name;
+    if (sampleOrder.phone) map[bKey].phone = sampleOrder.phone;
+    if (sampleOrder.handle) {
+      map[bKey].platform = sampleOrder.platform || "";
+      map[bKey].handle = sampleOrder.handle;
+    }
+  };
+
+  pool.cards.forEach(c => {
+    const qty = Math.max(0, Number(c.qty || 0));
+    const ranked = getRankedOrdersForCard(pool, c.id);
+    ranked.forEach((o, idx) => {
+      const bKey = orderBuyerKey(o) || o.code;
+      ensureBuyer(bKey, o);
+      if (idx < qty) {
+        map[bKey].wonCards.push(c);
+        map[bKey].wonAmount += Number(c.price || 0);
+      } else {
+        map[bKey].waitCards.push(c);
+      }
+    });
+  });
+
+  const seenBatch = new Set();
+  pool.orders.forEach(o => {
+    const bKey = orderBuyerKey(o) || o.code;
+    ensureBuyer(bKey, o);
+    const bk = `${bKey}-${o.timestamp}-${o.bindDesc}`;
+    if (!seenBatch.has(bk)) {
+      seenBatch.add(bk);
+      map[bKey].bindSum += Number(o.bindCost || 0);
+    }
+  });
+
+  return Object.values(map);
+}
+
+function renderAll() {
+  const pool = getPool();
+  document.getElementById("pageTitle").textContent = `夢幻瑪卡龍・${pool.name}`;
+  document.getElementById("adminPoolName").textContent = pool.name;
+  document.getElementById("redCodesInput").value = state.redCodes.join(", ");
+  renderContactDisplays();
+  renderPoolTabs();
+  renderStats(pool);
+  renderSetChips(pool);
+  renderSetBanner();
+  renderCards();
+  renderQueueAndSummary(pool);
+  if (isAdminLoggedIn) {
+    renderAdminTables(pool);
+    renderAdminDmPanel();
+  }
+  updateCartDock();
+}
+
+function renderPoolTabs() {
+  document.getElementById("poolTabs").innerHTML = Object.values(state.pools).map(p => `
+    <button class="pool-tab ${p.id === state.activePoolId ? "active" : ""}" onclick="switchPool('${p.id}')">${escapeHtml(p.name)}</button>
+  `).join("");
+}
+
+function switchPool(poolId) {
+  if (!state.pools[poolId]) return;
+  state.activePoolId = poolId;
+  selectedCardIds.clear();
+  saveState();
+  renderAll();
+}
+
+function renderStats(pool) {
+  const totalQty = pool.cards.reduce((s, c) => s + Math.max(0, Number(c.qty || 0)), 0);
+  const claimedQty = pool.cards.reduce((s, c) => s + Math.min(Number(c.qty || 0), getRankedOrdersForCard(pool, c.id).length), 0);
+  const pct = totalQty > 0 ? Math.round((claimedQty / totalQty) * 100) : 0;
+  const unsoldPct = 100 - pct;
+  const failRisk = totalQty > 0 && unsoldPct >= 80;
+
+  document.getElementById("poolStatsBanner").innerHTML = `
+    <div class="stat-box"><div class="stat-label">目前盤面狀態</div><div class="stat-val">${escapeHtml(pool.status || "進行中")}（${pool.cards.length} 款）</div></div>
+    <div class="stat-box">
+      <div class="stat-label">已排得標張數 / 總庫存張數</div>
+      <div class="stat-val">${claimedQty} / ${totalQty} 張（已售 ${pct}%）</div>
+      <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">成團門檻檢核（未售出 ≥80% 失敗）</div>
+      <div class="stat-val" style="color:${failRisk ? "#c62828" : "#2e7d32"};">
+        ${totalQty === 0 ? "尚無卡片" : (failRisk ? "⚠️ 未售出 " + unsoldPct + "%" : "✅ 已達售出門檻（未售 " + unsoldPct + "%）")}
+      </div>
+    </div>
+  `;
+}
+
+function renderSetChips(pool) {
+  const sets = ["ALL", "活動卡表", "第一彈", "第二彈", "第三彈", "第四彈", "第五彈", "第六彈"];
+  const extra = [...new Set(pool.cards.map(c => c.setName).filter(s => !sets.includes(s)))];
+  document.getElementById("setFilterChips").innerHTML = [...sets, ...extra].map(s => `
+    <button class="filter-chip ${currentSetFilter === s ? "active" : ""}" onclick="setSetFilter('${escapeHtml(s)}')">${s === "ALL" ? "全部彈數" : escapeHtml(s)}</button>
+  `).join("");
+}
+
+function setSetFilter(s) {
+  currentSetFilter = s;
+  renderSetBanner();
+  renderCards();
+}
+
+function renderCards() {
+  const pool = getPool();
+  const onlyStar = document.getElementById("onlyStarFilter").checked;
+  const onlyAvail = document.getElementById("onlyAvailableFilter").checked;
+  const kw = (document.getElementById("searchCardInput").value || "").trim().toLowerCase();
+
+  const filtered = pool.cards.filter(c => {
+    if (currentSetFilter !== "ALL" && c.setName !== currentSetFilter) return false;
+    if (onlyStar && !c.star) return false;
+    const ranked = getRankedOrdersForCard(pool, c.id);
+    if (onlyAvail && !(ranked.length < Number(c.qty || 0))) return false;
+    if (kw && !`${c.setName} ${c.code} ${c.name}`.toLowerCase().includes(kw)) return false;
+    return true;
+  });
+
+  const grid = document.getElementById("cardGrid");
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="box-card" style="grid-column:1/-1;text-align:center;">這一盤目前沒有符合條件的卡片～</div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(c => {
+    const ranked = getRankedOrdersForCard(pool, c.id);
+    const qty = Math.max(0, Number(c.qty || 0));
+    const isSoldOut = qty <= 0 || ranked.length >= qty;
+    return `
+      <div class="idol-card ${selectedCardIds.has(c.id) ? "selected" : ""} ${isSoldOut ? "sold-out" : ""}" onclick="toggleSelectCard('${c.id}')">
+        ${c.star ? `<div class="star-badge">⭐️ 熱貴</div>` : ""}
+        <div class="qty-badge">${isSoldOut ? "滿單/候補" : "餘 " + (qty - ranked.length) + "/" + qty}</div>
+        <div class="card-thumb">
+          <div class="card-code">${escapeHtml(c.setName)}・${escapeHtml(c.code)}</div>
+          <div class="card-name">${escapeHtml(c.name)}</div>
+        </div>
+        <div class="price-row">
+          <span class="price-moon">🌙 $${Number(c.price || 0)}</span>
+          ${Number(c.bind || 0) > 0 ? `<span class="bind-blue">💙 綁$${Number(c.bind)}</span>` : ""}
+        </div>
+        <div class="queue-codes">
+          ${ranked.length
+            ? ranked.map((r, idx) => `${idx < qty ? "✅" : "⏳"}${renderCodeBadge(r.code)}`).join("")
+            : `<span style="font-size:11px;color:#b8a3c2;">目前無人排單</span>`}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function toggleSelectCard(cardId) {
+  selectedCardIds.has(cardId) ? selectedCardIds.delete(cardId) : selectedCardIds.add(cardId);
+  renderCards();
+  updateCartDock();
+}
+
+function clearSelection() {
+  selectedCardIds.clear();
+  renderCards();
+  updateCartDock();
+}
+
+function updateCartDock() {
+  const pool = getPool();
+  const chosen = pool.cards.filter(c => selectedCardIds.has(c.id));
+  const cardSum = chosen.reduce((s, c) => s + Number(c.price || 0), 0);
+  const bindSum = chosen.reduce((s, c) => s + Number(c.bind || 0), 0);
+  let msg = `已勾選 <strong>${chosen.length}</strong> 張卡片｜卡片小計 <strong>$${cardSum}</strong>`;
+  if (bindSum > 0) msg += `｜藍字綁物建議 <strong>$${bindSum}</strong>`;
+  if (chosen.some(c => c.star)) msg += `｜<span style="color:#d84315;">含 ⭐️ 熱貴卡需綁物/盲包</span>`;
+  if (cardSum > 2000) msg += `｜<span style="color:#c2185b;">超過$2,000需50%訂金($${Math.ceil(cardSum * 0.5)})</span>`;
+  document.getElementById("cartSummaryText").innerHTML = msg;
+}
+
+function validateBuyerInfo(requirePhone = true) {
+  const platform = (document.getElementById("buyerPlatformSelect")?.value || "DC").trim();
+  const handle = (document.getElementById("buyerHandleInput")?.value || "").trim();
+  const rawName = (document.getElementById("buyerNameInput")?.value || "").trim();
+  const rawPhone = (document.getElementById("buyerPhoneInput")?.value || "").trim();
+  const cleanPhone = normalizePhone(rawPhone);
+  if (requirePhone && !cleanPhone) { alert("請先填寫你的「電話」喔！（名字隨意填即可）"); return null; }
+  if (!requirePhone && !cleanPhone && !handle) { alert("請先填寫「電話」或「用戶名稱」！"); return null; }
+  const code = getOrAssignBuyerCode(cleanPhone || rawPhone, platform, handle, rawName, true);
+  return { platform, handle, name: rawName || handle || "買家", phone: cleanPhone || rawPhone, code };
+}
+
+function openLookupModal() {
+  document.getElementById("lookupPhoneInput").value = normalizePhone(document.getElementById("buyerPhoneInput")?.value || "");
+  document.getElementById("lookupModal").classList.add("open");
+  runPhoneLookup();
+}
+
+function runPhoneLookup() {
+  const cleanPhone = normalizePhone(document.getElementById("lookupPhoneInput")?.value || "");
+  const box = document.getElementById("lookupResultBox");
+  if (!cleanPhone) { box.innerHTML = `<span style="color:#c62828;">請輸入電話號碼。</span>`; return; }
+  const pool = getPool();
+  const bKey = buyerUserKey(cleanPhone);
+  const myOrders = pool.orders.filter(o => orderBuyerKey(o) === bKey);
+  if (!myOrders.length) {
+    box.innerHTML = `<div class="box-card" style="padding:12px;margin:0;">電話 <strong>${escapeHtml(cleanPhone)}</strong> 在「${escapeHtml(pool.name)}」目前沒有排單。</div>`;
+    return;
+  }
+  const st = getBuyerStatus(pool.id, bKey);
+  let cardSum = 0;
+  const rows = myOrders.map(o => {
+    const c = pool.cards.find(x => x.id === o.cardId);
+    const ranked = getRankedOrdersForCard(pool, o.cardId);
+    const pos = ranked.findIndex(x => x.id === o.id);
+    const win = c && pos >= 0 && pos < Number(c.qty || 0);
+    const price = c ? Number(c.price || 0) : 0;
+    cardSum += price;
+    return `<li>${win ? `<span class="tag-win">得標</span>` : `<span class="tag-wait">候補#${Math.max(1, pos - Number(c?.qty || 0) + 1)}</span>`} [${escapeHtml(c?.setName || "")}] ${escapeHtml(c?.code || "")} ${escapeHtml(c?.name || "")}（$${price}）</li>`;
+  });
+  const seenBatch = new Set();
+  let bindSum = 0;
+  myOrders.forEach(o => {
+    const bk = `${o.timestamp}-${o.bindDesc}`;
+    if (!seenBatch.has(bk)) { seenBatch.add(bk); bindSum += Number(o.bindCost || 0); }
+  });
+  const total = cardSum + bindSum;
+  box.innerHTML = `
+    <div class="box-card" style="padding:12px;margin:0;">
+      <div><strong>代號：</strong>${renderCodeBadge(myOrders[0].code)}｜<strong>電話：</strong>${escapeHtml(cleanPhone)}</div>
+      <div><strong>張數：</strong>${myOrders.length} 張｜<strong>總金額：</strong><strong>$${total}</strong>${total > 2000 ? `（50%訂金 $${Math.ceil(total * 0.5)}）` : ""}</div>
+      <div><strong>狀態：</strong>${st.paid ? "✅ 已付訂/全額" : "⏳ 未付款"}｜${st.shipped ? "📦 已寄出" : "🕒 待寄出"}</div>
+      <ul style="margin:8px 0 0 18px;padding:0;">${rows.join("")}</ul>
+    </div>
+  `;
+}
+
+function openCheckoutModal() {
+  const info = validateBuyerInfo(true);
+  if (!info) return;
+  if (!selectedCardIds.size) { alert("請先勾選至少一張卡片！"); return; }
+  const pool = getPool();
+  const bKey = buyerUserKey(info.phone, info.platform, info.handle);
+  const dupCards = pool.cards.filter(c => selectedCardIds.has(c.id) && pool.orders.some(o => o.cardId === c.id && orderBuyerKey(o) === bKey));
+  if (dupCards.length && !confirm(`這支電話已經排過：\n${dupCards.map(c => `${c.code} ${c.name}`).join("、")}\n\n確定要再排一次嗎？`)) return;
+  document.getElementById("generatedOrderOutput").style.display = "none";
+  refreshCheckoutModal();
+  document.getElementById("checkoutModal").classList.add("open");
+}
+
+function refreshCheckoutModal() {
+  const pool = getPool();
+  const chosen = pool.cards.filter(c => selectedCardIds.has(c.id));
+  const cardSum = chosen.reduce((s, c) => s + Number(c.price || 0), 0);
+  const bindRequired = chosen.reduce((s, c) => s + Number(c.bind || 0), 0);
+  const info = validateBuyerInfo(false) || { name: "", phone: "", code: "B01" };
+  const bindType = document.getElementById("bindChoiceType").value;
+  document.getElementById("gachaCountRow").style.display = (bindType === "gacha250" || bindType === "gacha100") ? "block" : "none";
+  const gachaCnt = Math.max(1, Number(document.getElementById("gachaCountInput").value || 1));
+  const bindCost = bindType === "gacha250" ? gachaCnt * 250 : bindType === "gacha100" ? gachaCnt * 100 : bindType === "self" ? bindRequired : 0;
+  const total = cardSum + bindCost;
+
+  document.getElementById("checkoutDetail").innerHTML = `
+    <div style="font-size:13px;line-height:1.6;">
+      <div><strong>代號：</strong>${renderCodeBadge(info.code)}｜<strong>電話：</strong>${escapeHtml(info.phone)}｜<strong>名字：</strong>${escapeHtml(info.name)}</div>
+      <div><strong>卡片（${chosen.length} 張）：</strong>${chosen.map(c => `${escapeHtml(c.code)} ${escapeHtml(c.name)} ($${c.price})`).join("、")}</div>
+      <div><strong>合計：$${total}</strong>（卡片 $${cardSum} + 綁物/盲包 $${bindCost}）</div>
+    </div>
+  `;
+  let alerts = "";
+  if (chosen.some(c => c.star) || bindRequired > 0) alerts += `<div class="alert-box">⭐️ 含熱貴卡或藍字綁物（建議 $${bindRequired}），請選自選綁物或盲包／抽抽樂。</div>`;
+  if (total > 2000) alerts += `<div class="deposit-box">💰 超過 $2,000！需付 50% 訂金（約 $${Math.ceil(total * 0.5)}），賣貨便付訂。</div>`;
+  document.getElementById("checkoutAlerts").innerHTML = alerts;
+}
+
+function submitBuyerOrder() {
+  const info = validateBuyerInfo(true);
+  if (!info) return;
+  const pool = getPool();
+  const chosen = pool.cards.filter(c => selectedCardIds.has(c.id));
+  if (!chosen.length) return;
+  const mode = document.getElementById("bundleModeSelect").value;
+  const bindType = document.getElementById("bindChoiceType").value;
+  const gachaCnt = Math.max(1, Number(document.getElementById("gachaCountInput").value || 1));
+  const note = (document.getElementById("orderNoteInput").value || "").trim();
+
+  let bindDesc = "無", bindCost = 0;
+  if (bindType === "self") { bindDesc = "自選綁物"; bindCost = chosen.reduce((s, c) => s + Number(c.bind || 0), 0); }
+  else if (bindType === "gacha250") { bindDesc = `① 簽卡/稀有包 × ${gachaCnt}抽`; bindCost = gachaCnt * 250; }
+  else if (bindType === "gacha100") { bindDesc = `② 一般/普通包 × ${gachaCnt}抽`; bindCost = gachaCnt * 100; }
+
+  const now = Date.now();
+  chosen.forEach(c => {
+    pool.orders.push({
+      id: "ord-" + Math.random().toString(36).slice(2, 8),
+      cardId: c.id, code: info.code, platform: info.platform, handle: info.handle,
+      name: info.name, phone: info.phone, mode, bindDesc, bindCost, note, timestamp: now
+    });
+  });
+
+  const cardSum = chosen.reduce((s, c) => s + Number(c.price || 0), 0);
+  const total = cardSum + bindCost;
+  const text =
+`🌷【${pool.name}】喊單明細
+代號：${info.code}｜電話：${info.phone}｜名字：${info.name}
+方式：${mode === "set" ? "整組/整彈收優先" : "單張/拆單挑卡"}
+清單：
+${chosen.map(c => `- [${c.setName}] ${c.code} ${c.name} $${c.price}${c.star ? " ⭐️" : ""}`).join("\n")}
+綁物/抽抽樂：${bindDesc}（$${bindCost}）
+總金額：$${total}${total > 2000 ? `\n⚠️ 超過$2,000，需付50%訂金：$${Math.ceil(total * 0.5)}（賣貨便）` : ""}${note ? `\n備註：${note}` : ""}${formatContactPlainText()}`;
+
+  document.getElementById("orderCopyText").value = text;
+  document.getElementById("generatedOrderOutput").style.display = "block";
+  selectedCardIds.clear();
+  saveState();
+  renderAll();
+}
+
+function copyOrderText() {
+  const el = document.getElementById("orderCopyText");
+  el.select();
+  document.execCommand("copy");
+  alert("已複製喊單明細！");
+}
+
+function openBuyerPrivateChat() {
+  const info = validateBuyerInfo(false);
+  if (!info) return;
+  const key = buyerUserKey(info.phone, info.platform, info.handle);
+  if (!state.privateChats[key]) state.privateChats[key] = [];
+  saveState();
+  document.getElementById("buyerChatTitle").innerHTML = `💬 個人專屬聊天室（${renderCodeBadge(info.code)} ${escapeHtml(info.name)}）`;
+  renderBuyerChatMessages(key);
+  document.getElementById("buyerChatModal").classList.add("open");
+}
+
+function renderBuyerChatMessages(key) {
+  const list = state.privateChats[key] || [];
+  const box = document.getElementById("buyerChatMessages");
+  box.innerHTML = list.length
+    ? list.map(m => `<div class="dm-msg ${m.sender === "admin" ? "admin" : "buyer"}"><div>${escapeHtml(m.text)}</div><div class="dm-meta">${m.sender === "admin" ? "👑 老闆" : "你"}・${new Date(m.time).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })}</div></div>`).join("")
+    : `<div style="text-align:center;color:var(--text-muted);font-size:12.5px;padding:16px;">還沒有訊息～</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+function sendBuyerDm() {
+  const info = validateBuyerInfo(false);
+  if (!info) return;
+  const input = document.getElementById("buyerChatInput");
+  const text = (input.value || "").trim();
+  if (!text) return;
+  const key = buyerUserKey(info.phone, info.platform, info.handle);
+  state.privateChats[key].push({ sender: "buyer", text, time: Date.now() });
+  input.value = "";
+  saveState();
+  renderBuyerChatMessages(key);
+  if (isAdminLoggedIn) renderAdminDmPanel();
+}
+
+function renderAdminDmPanel() {
+  const threadList = document.getElementById("adminDmThreadList");
+  const keys = Object.keys(state.buyerRegistry);
+  if (!keys.length) { threadList.innerHTML = `<div style="font-size:12px;color:var(--text-muted);padding:8px;">尚無買家資料</div>`; return; }
+  if (!activeAdminChatKey || !state.buyerRegistry[activeAdminChatKey]) activeAdminChatKey = keys[0];
+  threadList.innerHTML = keys.map(k => {
+    const info = state.buyerRegistry[k];
+    const last = (state.privateChats[k] || []).slice(-1)[0];
+    return `<button class="dm-thread-btn ${k === activeAdminChatKey ? "active" : ""}" onclick="selectAdminDmThread('${k}')"><div>[${escapeHtml(info.code)}] ${escapeHtml(info.name || info.phone)}</div><div style="font-size:11px;opacity:0.8;">${last ? escapeHtml(last.text) : "尚無對話"}</div></button>`;
+  }).join("");
+  const cur = state.buyerRegistry[activeAdminChatKey];
+  document.getElementById("adminDmHeader").innerHTML = `目前對象：${renderCodeBadge(cur.code)} <strong>${escapeHtml(cur.name || "")}（${escapeHtml(cur.phone || "")}）</strong>`;
+  const msgs = state.privateChats[activeAdminChatKey] || [];
+  const box = document.getElementById("adminDmMessages");
+  box.innerHTML = msgs.length
+    ? msgs.map(m => `<div class="dm-msg ${m.sender === "admin" ? "admin" : "buyer"}"><div>${escapeHtml(m.text)}</div><div class="dm-meta">${m.sender === "admin" ? "👑 老闆" : "買家"}・${new Date(m.time).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })}</div></div>`).join("")
+    : `<div style="text-align:center;color:var(--text-muted);font-size:12.5px;padding:16px;">尚無訊息</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+function selectAdminDmThread(k) { activeAdminChatKey = k; renderAdminDmPanel(); }
+
+function sendAdminDm() {
+  if (!activeAdminChatKey) return;
+  const input = document.getElementById("adminDmInput");
+  const text = (input.value || "").trim();
+  if (!text) return;
+  state.privateChats[activeAdminChatKey].push({ sender: "admin", text, time: Date.now() });
+  input.value = "";
+  saveState();
+  renderAdminDmPanel();
+}
+
+function renderQueueAndSummary(pool) {
+  const qBody = document.getElementById("queueTableBody");
+  qBody.innerHTML = pool.cards.length ? pool.cards.map(c => {
+    const ranked = getRankedOrdersForCard(pool, c.id);
+    const qty = Math.max(0, Number(c.qty || 0));
+    return `
+      <tr>
+        <td><strong>${escapeHtml(c.setName)}</strong><br><small>${escapeHtml(c.code)}</small></td>
+        <td>${c.star ? "⭐️ " : ""}${escapeHtml(c.name)}</td>
+        <td>🌙 $${Number(c.price || 0)}${Number(c.bind || 0) > 0 ? `<br><span class="bind-blue">💙 $${Number(c.bind)}</span>` : ""}</td>
+        <td>${qty} 張</td>
+        <td>${ranked.length ? ranked.map((r, i) => `${i < qty ? `<span class="tag-win">得標#${i + 1}</span>` : `<span class="tag-wait">候補#${i - qty + 1}</span>`}${renderCodeBadge(r.code)}(${escapeHtml(r.name || r.phone)})`).join(" ") : `<span style="color:var(--text-muted);">尚無人排單</span>`}</td>
+      </tr>
+    `;
+  }).join("") : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">這一盤目前沒有卡片</td></tr>`;
+
+  const buyers = {};
+  pool.orders.forEach(o => {
+    const c = pool.cards.find(x => x.id === o.cardId);
+    const bKey = orderBuyerKey(o) || o.code;
+    if (!buyers[bKey]) buyers[bKey] = { bKey, code: o.code, platform: o.platform || "", handle: o.handle || "", name: o.name || "", phone: o.phone || "-", count: 0, cardSum: 0, bindSum: 0 };
+    buyers[bKey].count += 1;
+    buyers[bKey].cardSum += c ? Number(c.price || 0) : 0;
+  });
+  const seenBatch = new Set();
+  pool.orders.forEach(o => {
+    const bKey = orderBuyerKey(o) || o.code;
+    const bk = `${bKey}-${o.timestamp}-${o.bindDesc}`;
+    if (!seenBatch.has(bk)) { seenBatch.add(bk); if (buyers[bKey]) buyers[bKey].bindSum += Number(o.bindCost || 0); }
+  });
+
+  const bBody = document.getElementById("buyerSummaryBody");
+  const list = Object.values(buyers);
+  bBody.innerHTML = list.length ? list.map(b => {
+    const total = b.cardSum + b.bindSum;
+    const st = getBuyerStatus(pool.id, b.bKey);
+    const enc = encodeURIComponent(b.bKey);
+    return `
+      <tr>
+        <td>${renderCodeBadge(b.code)}</td>
+        <td>${b.handle ? `${escapeHtml(b.platform)}：${escapeHtml(b.handle)}` : "-"}</td>
+        <td>${escapeHtml(b.name || "-")}<br><small>${escapeHtml(b.phone)}</small></td>
+        <td>${b.count} 張</td>
+        <td>$${b.cardSum}</td>
+        <td>$${b.bindSum}</td>
+        <td><strong>$${total}</strong></td>
+        <td>${total > 2000 ? `<span style="color:#c2185b;font-weight:800;">需付50%訂金 $${Math.ceil(total * 0.5)}</span>` : `<span style="color:#2e7d32;">免訂金</span>`}</td>
+        <td>
+          <label class="check-pill"><input type="checkbox" ${st.paid ? "checked" : ""} onchange="toggleBuyerStatus('${pool.id}', decodeURIComponent('${enc}'), 'paid', this.checked)" />已付訂/全額</label>
+          <label class="check-pill"><input type="checkbox" ${st.shipped ? "checked" : ""} onchange="toggleBuyerStatus('${pool.id}', decodeURIComponent('${enc}'), 'shipped', this.checked)" />已寄出</label>
+        </td>
+      </tr>
+    `;
+  }).join("") : `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);">目前尚無買家喊單</td></tr>`;
+}
+
+function openAdminLogin() {
+  if (isAdminLoggedIn) { switchMode("admin"); return; }
+  document.getElementById("adminPwdInput").value = "";
+  document.getElementById("adminLoginModal").classList.add("open");
+}
+
+function verifyAdminPwd() {
+  if (document.getElementById("adminPwdInput").value === ADMIN_PASS) {
+    isAdminLoggedIn = true;
+    closeModal("adminLoginModal");
+    document.getElementById("tabAdmin").style.display = "inline-block";
+    switchMode("admin");
+  } else { alert("密碼錯誤喔"); }
+}
+
+function switchMode(mode) {
+  document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  if (mode === "buyer") { document.getElementById("tabBuyer").classList.add("active"); document.getElementById("panel-buyer").classList.add("active"); }
+  else if (mode === "queue") { document.getElementById("tabQueue").classList.add("active"); document.getElementById("panel-queue").classList.add("active"); }
+  else if (mode === "admin" && isAdminLoggedIn) {
+    document.getElementById("tabAdmin").classList.add("active");
+    document.getElementById("panel-admin").classList.add("active");
+    renderAdminTables(getPool());
+    renderAdminDmPanel();
+  }
+}
+
+function renderAdminTables(pool) {
+  const fwBody = document.getElementById("adminFinalWinnersBody");
+  const winners = buildFinalWinnersMap(pool);
+  fwBody.innerHTML = winners.length ? winners.map(w => {
+    const wonHtml = w.wonCards.length
+      ? w.wonCards.map(c => `<span class="won-card-chip">${escapeHtml(c.code)} ${escapeHtml(c.name)} ($${c.price})</span>`).join("")
+      : `<span style="color:var(--text-muted);">目前無得標卡</span>`;
+    const waitHtml = w.waitCards.length
+      ? w.waitCards.map(c => `<span class="tag-wait" style="margin:2px;">${escapeHtml(c.code)} ${escapeHtml(c.name)}</span>`).join("")
+      : `<span style="color:var(--text-muted);">-</span>`;
+    const totalWon = w.wonAmount + w.bindSum;
+    return `
+      <tr>
+        <td>${renderCodeBadge(w.code)}<br><strong>${escapeHtml(w.name || "-")}</strong></td>
+        <td>${escapeHtml(w.phone)}${w.handle ? `<br><small>${escapeHtml(w.platform)}：${escapeHtml(w.handle)}</small>` : ""}</td>
+        <td><strong>${w.wonCards.length} 張：</strong><br>${wonHtml}</td>
+        <td>${waitHtml}</td>
+        <td>
+          <strong>$${totalWon}</strong>
+          <br><small>卡$${w.wonAmount} + 綁$${w.bindSum}</small>
+          ${totalWon > 2000 ? `<br><span style="color:#c2185b;font-weight:800;">訂金50% $${Math.ceil(totalWon * 0.5)}</span>` : ""}
+        </td>
+      </tr>
+    `;
+  }).join("") : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">目前尚無喊單紀錄</td></tr>`;
+
+  document.getElementById("adminCardTableBody").innerHTML = pool.cards.length ? pool.cards.map(c => `
+    <tr>
+      <td><strong>${escapeHtml(c.setName)}</strong><br><small>${escapeHtml(c.code)}</small></td>
+      <td><input type="text" class="name-edit-input" value="${escapeHtml(c.name)}" onchange="updateCardField('${c.id}', 'name', this.value)" /></td>
+      <td><input type="number" class="num-input" value="${Number(c.price || 0)}" min="0" step="10" onchange="updateCardField('${c.id}', 'price', Number(this.value))" /></td>
+      <td><input type="number" class="num-input" value="${Number(c.bind || 0)}" min="0" step="10" onchange="updateCardField('${c.id}', 'bind', Number(this.value))" /></td>
+      <td><input type="checkbox" ${c.star ? "checked" : ""} onchange="updateCardField('${c.id}', 'star', this.checked)" /></td>
+      <td>
+        <button class="btn btn-soft btn-sm" onclick="stepCardQty('${c.id}', -1)">-</button>
+        <strong style="margin:0 6px;">${Number(c.qty || 0)}</strong>
+        <button class="btn btn-soft btn-sm" onclick="stepCardQty('${c.id}', 1)">+</button>
+      </td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteCard('${c.id}')">刪除</button></td>
+    </tr>
+  `).join("") : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">這一盤目前沒有卡片</td></tr>`;
+
+  document.getElementById("adminOrdersTableBody").innerHTML = pool.orders.length ? pool.orders.map(o => {
+    const c = pool.cards.find(x => x.id === o.cardId);
+    return `
+      <tr>
+        <td>${renderCodeBadge(o.code)}</td>
+        <td>${o.handle ? `${escapeHtml(o.platform)}：${escapeHtml(o.handle)}` : "-"}</td>
+        <td>${escapeHtml(o.name || "-")}<br><small>${escapeHtml(o.phone || "-")}</small></td>
+        <td>${c ? `${escapeHtml(c.code)} ${escapeHtml(c.name)}` : "已刪除"}</td>
+        <td>${o.mode === "set" ? "整組優先" : "單張"}</td>
+        <td>${escapeHtml(o.bindDesc)}${o.note ? `（${escapeHtml(o.note)}）` : ""}</td>
+        <td><small>${new Date(o.timestamp).toLocaleString("zh-TW")}</small></td>
+        <td><button class="btn btn-danger btn-sm" onclick="cancelSingleOrder('${o.id}')">取消</button></td>
+      </tr>
+    `;
+  }).join("") : `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">目前沒有任何喊單</td></tr>`;
+}
+
+function copyFinalWinnersSummary() {
+  const pool = getPool();
+  const winners = buildFinalWinnersMap(pool).filter(w => w.wonCards.length > 0 || w.waitCards.length > 0);
+  if (!winners.length) return alert("目前還沒有喊單或得標紀錄喔！");
+
+  const lines = [`📦【${pool.name}】最終得標分貨明細`];
+  winners.forEach(w => {
+    const totalWon = w.wonAmount + w.bindSum;
+    lines.push(`\n${w.code}｜${w.name || "買家"}（${w.phone}）`);
+    if (w.wonCards.length) {
+      lines.push(`✅ 最終得標（${w.wonCards.length}張）：${w.wonCards.map(c => `${c.code} ${c.name}($${c.price})`).join("、")}`);
+    } else {
+      lines.push(`✅ 最終得標：無`);
+    }
+    if (w.waitCards.length) {
+      lines.push(`⏳ 候補中：${w.waitCards.map(c => `${c.code} ${c.name}`).join("、")}`);
+    }
+    lines.push(`💰 得標小計：$${totalWon}${totalWon > 2000 ? `（50%訂金 $${Math.ceil(totalWon * 0.5)}）` : ""}`);
+  });
+
+  const txt = lines.join("\n");
+  navigator.clipboard?.writeText(txt);
+  alert("已複製最終得標分貨表！\n\n" + txt);
+}
+
+function updateCardField(cardId, field, val) {
+  const c = getPool().cards.find(x => x.id === cardId);
+  if (!c) return;
+  c[field] = val;
+  saveState();
+  renderStats(getPool());
+  renderCards();
+  renderQueueAndSummary(getPool());
+  if (isAdminLoggedIn) renderAdminTables(getPool());
+  updateCartDock();
+}
+
+function applyBulkFixedPrice() {
+  const target = document.getElementById("bulkTargetSet").value;
+  const raw = document.getElementById("bulkFixedPrice").value;
+  if (raw === "" || Number(raw) < 0) return alert("請輸入有效的金額（0 以上）！");
+  const fixedVal = Number(raw);
+  getPool().cards.forEach(c => {
+    if (target === "ALL" || c.setName === target) c.price = fixedVal;
+  });
+  saveState();
+  renderAll();
+  alert(`已將「${target === "ALL" ? "本盤全部卡片" : target}」金額統一設為 $${fixedVal}！`);
+}
+
+function applyBulkPriceDelta() {
+  const target = document.getElementById("bulkTargetSet").value;
+  const delta = Number(document.getElementById("bulkDeltaPrice").value || 0);
+  if (!delta) return alert("請輸入非 0 的加減金額！");
+  getPool().cards.forEach(c => {
+    if (target === "ALL" || c.setName === target) c.price = Math.max(0, Number(c.price || 0) + delta);
+  });
+  saveState();
+  renderAll();
+  alert(`已對「${target === "ALL" ? "本盤全部卡片" : target}」套用 ${delta > 0 ? "+" + delta : delta} 元！`);
+}
+
+function stepCardQty(cardId, delta) {
+  const c = getPool().cards.find(x => x.id === cardId);
+  if (!c) return;
+  c.qty = Math.max(0, Number(c.qty || 0) + delta);
+  saveState();
+  renderAll();
+}
+
+function deleteCard(cardId) {
+  if (!confirm("確定要刪除這張卡片嗎？")) return;
+  const pool = getPool();
+  pool.cards = pool.cards.filter(x => x.id !== cardId);
+  pool.orders = pool.orders.filter(o => o.cardId !== cardId);
+  selectedCardIds.delete(cardId);
+  saveState();
+  renderAll();
+}
+
+function cancelSingleOrder(orderId) {
+  getPool().orders = getPool().orders.filter(o => o.id !== orderId);
+  saveState();
+  renderAll();
+}
+
+function resetCurrentPoolOrders() {
+  if (!confirm("確定要清空目前這一盤的所有喊單嗎？")) return;
+  getPool().orders = [];
+  saveState();
+  renderAll();
+}
+
+function deleteCurrentPool() {
+  if (Object.keys(state.pools).length <= 1) return alert("至少要保留一個盤面！");
+  const cur = getPool();
+  if (!confirm(`確定要刪除「${cur.name}」嗎？`)) return;
+  delete state.pools[cur.id];
+  state.activePoolId = Object.keys(state.pools)[0];
+  selectedCardIds.clear();
+  saveState();
+  renderAll();
+}
+
+function saveRedCodes() {
+  state.redCodes = (document.getElementById("redCodesInput").value || "").split(/[,，]/).map(s => s.trim()).filter(Boolean);
+  saveState();
+  renderAll();
+}
+
+function openNewPoolModal() {
+  const poolOptions = Object.values(state.pools).map(p =>
+    `<option value="copy:${p.id}">直接複製「${escapeHtml(p.name)}」的全部卡片（含改過的名字與價格）</option>`
+  ).join("");
+
+  document.getElementById("formModalContent").innerHTML = `
+    <h3 style="margin-top:0;color:var(--purple-deep);">✨ 開設新盤</h3>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:13px;font-weight:800;display:block;margin-bottom:4px;">新盤面名稱</label>
+      <input type="text" id="newPoolName" style="width:100%;padding:8px 12px;border-radius:12px;border:1.5px solid #dfb8f2;" placeholder="例如：第三盤" />
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:800;display:block;margin-bottom:4px;">卡片來源</label>
+      <select id="newPoolTemplate" style="width:100%;padding:8px 12px;border-radius:12px;border:1.5px solid #dfb8f2;">
+        ${poolOptions}
+        <option value="full">載入預設完整卡表（活動卡表 + 第一～六彈）</option>
+        <option value="empty">空白盤面</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-soft" onclick="closeModal('formModal')">取消</button>
+      <button class="btn btn-primary" onclick="createNewPool()">建立並切換</button>
+    </div>
+  `;
+  document.getElementById("formModal").classList.add("open");
+}
+
+function createNewPool() {
+  const name = (document.getElementById("newPoolName").value || "").trim();
+  if (!name) return alert("請輸入盤面名稱！");
+  const tpl = document.getElementById("newPoolTemplate").value;
+  let cards = [];
+  if (tpl.startsWith("copy:")) {
+    cards = cloneCardsFromPool(state.pools[tpl.slice(5)]);
+  } else if (tpl === "full") {
+    cards = buildInitialCards();
+  }
+
+  const id = "pool-" + Date.now();
+  state.pools[id] = { id, name, status: "進行中", cards, orders: [] };
+  state.activePoolId = id;
+  selectedCardIds.clear();
+  saveState();
+  closeModal("formModal");
+  renderAll();
+}
+
+function openAddCardModal() {
+  document.getElementById("formModalContent").innerHTML = `
+    <h3 style="margin-top:0;color:var(--pink-deep);">＋ 新增卡片</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <label style="font-size:12px;font-weight:800;">彈數</label>
+        <select id="addCardSet" style="width:100%;padding:8px;border-radius:10px;border:1.5px solid #dfb8f2;">
+          <option>活動卡表</option><option>第一彈</option><option>第二彈</option>
+          <option>第三彈</option><option>第四彈</option><option>第五彈</option><option selected>第六彈</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:800;">卡號（可留空）</label>
+        <input type="text" id="addCardCode" style="width:100%;padding:8px;border-radius:10px;border:1.5px solid #dfb8f2;" placeholder="例如：AP6-099" />
+      </div>
+      <div style="grid-column:1/-1;">
+        <label style="font-size:12px;font-weight:800;">卡片名稱</label>
+        <input type="text" id="addCardName" style="width:100%;padding:8px;border-radius:10px;border:1.5px solid #dfb8f2;" placeholder="卡片名稱" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:800;">價格 🌙</label>
+        <input type="number" id="addCardPrice" style="width:100%;padding:8px;border-radius:10px;border:1.5px solid #dfb8f2;" value="200" />
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:800;">數量</label>
+        <input type="number" id="addCardQty" style="width:100%;padding:8px;border-radius:10px;border:1.5px solid #dfb8f2;" value="1" min="0" />
+      </div>
+      <div style="grid-column:1/-1;">
+        <label><input type="checkbox" id="addCardStar" /> 標記為 ⭐️ 熱貴卡</label>
+      </div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-soft" onclick="closeModal('formModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveNewCard()">儲存</button>
+    </div>
+  `;
+  document.getElementById("formModal").classList.add("open");
+}
+
+function saveNewCard() {
+  const name = (document.getElementById("addCardName").value || "").trim();
+  if (!name) return alert("請輸入卡片名稱！");
+  const setName = document.getElementById("addCardSet").value;
+  const code = (document.getElementById("addCardCode").value || "").trim() || ("#"+ Math.floor(Math.random()*900+100));
+  getPool().cards.unshift({
+    id: "c-" + Date.now() + Math.random().toString(36).slice(2,5),
+    setName, code, name,
+    price: Number(document.getElementById("addCardPrice").value || 0),
+    bind: 0,
+    qty: Math.max(0, Number(document.getElementById("addCardQty").value || 1)),
+    star: document.getElementById("addCardStar").checked
+  });
+  saveState();
+  closeModal("formModal");
+  renderAll();
+}
+
+function copyPoolSummary() {
+  const pool = getPool();
+  const lines = [`🌷【${pool.name}】排單狀況總表`];
+  pool.cards.forEach(c => {
+    const ranked = getRankedOrdersForCard(pool, c.id);
+    if (ranked.length) lines.push(`${c.star ? "⭐️" : ""}[${c.setName}] ${c.code} ${c.name} ($${c.price}) -> ${ranked.map((r, i) => `${i < c.qty ? "✅" : "候"}${r.code}`).join(" ")}`);
+  });
+  const txt = (lines.length > 1 ? lines.join("\n") : `🌷【${pool.name}】目前尚無排單紀錄`) + formatContactPlainText();
+  navigator.clipboard?.writeText(txt);
+  alert("已複製本盤公告總表！");
+}
+
+function openRulesModal() { renderContactDisplays(); document.getElementById("rulesModal").classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+renderAll();
+pullFromCloud();
+</script>
+</body>
+</html>
